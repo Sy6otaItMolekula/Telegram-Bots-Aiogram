@@ -1,0 +1,31 @@
+from datetime import datetime
+
+TOKEN = "YourTOKEN"
+bot = Bot(token=TOKEN)
+
+@dp.message_handler(commands=['timer'])
+async def timer1(message: types.Message):
+    time = message.text.split()
+    year = int(time[1])
+    month = int(time[2])
+    day = int(time[3])
+    hour = int(time[4])
+    minute = int(time[5])
+    second = int(time[6])
+    
+    timer_date = datetime(year, month, day, hour, minute, second)
+    timer_date.strftime("%Y-%m-%d %H:%M:%S.%f")
+        
+    now = datetime.now()
+    await message.answer(f'Таймер добавлен\n{timer_date}\n{now}')
+    
+    await asyncio.create_task(timer2(timer_date, message))
+    
+async def timer2(timer_date, message: types.Message):
+    while datetime.now() < timer_date:
+        await asyncio.sleep(1)
+        if datetime.now() >= timer_date:
+            break
+
+if __name__ == '__main__':
+    executor.start_polling(dp)
