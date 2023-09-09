@@ -1,0 +1,64 @@
+from datetime import datetime, time
+from aiogram import Bot, types, Dispatcher, executor
+
+TOKEN = cfg.TOKEN1
+bot = Bot(token=TOKEN)
+dp = Dispatcher(bot)
+
+@dp.message_handler(commands=['ban'])
+async def ban_user(message: types.Message):
+    username = message.reply_to_message.from_user.username
+    ban_id = message.reply_to_message.from_user.id
+    admin = message.from_user.id
+    member = await bot.get_chat_member(chat_id=message.chat.id, user_id=admin)
+    await db_start()
+
+    if not member.is_chat_admin():
+        await message.reply('Вы не администратор.')
+        return
+    
+    reply_to = message.reply_to_message
+
+    if not reply_to:
+        await message.reply('Вы должны ответить на сообщение пользователя, которого хотите забанить.')
+        return
+
+    values = message.text.split()
+
+    if len(values) != 3:
+        await message.reply('Используйте команду следующим образом: /ban <время> <h/m/s>')
+        return
+
+    try:
+        time = int(values[1])
+        time_unit = values[2]
+
+        if time_unit == 'h':
+            mute_end_time = datetime.now() + timedelta(hours=time)
+            time_label = 'часов'
+        elif time_unit == 'm':
+            mute_end_time = datetime.now() + timedelta(minutes=time)
+            time_label = 'минут'
+        elif time_unit == 's':
+            mute_end_time = datetime.now() + timedelta(seconds=time)
+            time_label = 'секунд'
+        else:
+            raise ValueError()
+
+        await bot.kick_chat_member(chat_id=message.chat.id, user_id=ban_id)
+
+        ban_message = f'Пользователь @{username} забанен на {time} {time_label}.'
+        await message.reply(ban_message)
+
+        while datetime.now() < mute_end_time:
+            await asyncio.sleep(1)
+            if datetime.now() >= mute_end_time:
+                break
+
+        await bot.unban_chat_member(chat_id=message.chat.id, user_id=ban_id)
+
+    except (ValueError, IndexError):
+        await message.reply('Неверный формат времени или команды.')
+
+if __name__ == '__main__':
+    executor.start_polling(dp, on_startup=on_start_up)
