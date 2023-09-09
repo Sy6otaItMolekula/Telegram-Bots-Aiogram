@@ -2,6 +2,7 @@ from datetime import datetime
 
 TOKEN = "YourTOKEN"
 bot = Bot(token=TOKEN)
+dp = Dispatcher(bot)
 
 @dp.message_handler(commands=['timer'])
 async def timer1(message: types.Message):
