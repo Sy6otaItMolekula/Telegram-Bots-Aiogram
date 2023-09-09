@@ -1,0 +1,25 @@
+import logging
+from aiogram.dispatcher.middlewares import BaseMiddleware
+from aiogram import Bot, types, Dispatcher, executor
+
+TOKEN = "YourTOKEN"
+bot = Bot(token=TOKEN)
+
+logging.basicConfig(level=logging.INFO)
+
+class CustomLoggingMiddleware(BaseMiddleware):
+    async def on_pre_process_message(self, message: types.Message, data: dict):
+        time = datetime.now().strftime('%H:%M:%S')
+        name = await get_name(message)
+        logging.info("[%s] %s: %s", time, name, message.text)
+        
+async def get_name(message: types.Message):
+    name = message.from_user.username
+    if name is None:
+        name = message.from_user.first_name
+    return name
+
+dp.middleware.setup(CustomLoggingMiddleware())
+
+if __name__ == '__main__':
+    executor.start_polling(dp)
