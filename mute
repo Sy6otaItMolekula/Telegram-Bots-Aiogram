@@ -1,0 +1,61 @@
+from datetime import datetime, timedelta, time
+from aiogram import Bot, types, Dispatcher, executor
+
+TOKEN = cfg.TOKEN1
+bot = Bot(token=TOKEN)
+dp = Dispatcher(bot)
+
+@dp.message_handler(commands=['mute'])
+async def mute_user(message: types.Message):
+    member = await bot.get_chat_member(chat_id=message.chat.id, user_id=message.from_user.id)
+
+    if not member.is_chat_admin():
+        await message.reply('Вы не администратор.')
+        return
+
+    reply_to = message.reply_to_message
+
+    if not reply_to:
+        await message.reply('Чтобы использовать мут, ответьте на сообщение пользователя, которого хотите замутить, командой /mute или /мут, и укажите время в минутах. Также вы можете добавить причину после ключевого слова "причина:"')
+        return
+
+    values = message.text.split()
+
+    if len(values) < 3:
+        await message.reply('Используйте команду следующим образом: /mute <время> <h/m/s>')
+        return
+
+    try:
+        time = int(values[1])
+        time_unit = values[2]
+
+        if time_unit == 'h':
+            mute_end_time = datetime.now() + timedelta(hours=time)
+            time_label = 'часов'
+        elif time_unit == 'm':
+            mute_end_time = datetime.now() + timedelta(minutes=time)
+            time_label = 'минут'
+        elif time_unit == 's':
+            mute_end_time = datetime.now() + timedelta(seconds=time)
+            time_label = 'секунд'
+        else:
+            raise ValueError()
+
+        if time <= 0:
+            raise ValueError()
+
+    except (ValueError, IndexError):
+        await message.reply('Некорректно указано время мута.')
+        return
+
+    user = reply_to.from_user
+    permissions = cfg.permissions_f
+
+    await bot.restrict_chat_member(chat_id=message.chat.id, user_id=user.id, permissions=permissions, until_date=mute_end_time)
+
+    mute_message = f'Пользователь @{user.username} замучен на {time} {time_label}.'
+    
+    await message.reply(mute_message)
+
+    if __name__ == '__main__':
+    executor.start_polling(dp)
