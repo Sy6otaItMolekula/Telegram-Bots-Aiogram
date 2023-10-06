@@ -10,10 +10,30 @@ logging.basicConfig(level=logging.INFO)
 
 class CustomLoggingMiddleware(BaseMiddleware):
     async def on_pre_process_message(self, message: types.Message, data: dict):
+        chat = await get_chat(message)
         time = datetime.now().strftime('%H:%M:%S')
         name = await get_name(message)
-        logging.info("[%s] %s: %s", time, name, message.text)
-        
+        message_content = await get_message(message)
+        logging.info("[%s] [%s] %s: %s", time, chat, name, message_content)
+
+async def get_chat(message: types.Message):
+    chat = await bot.get_chat(message.chat.id)
+    chat_id = chat.id
+    return chat_id
+
+async def get_message(message: types.Message):
+    if message.text:
+        return message.text
+    if message.photo:
+        return message.photo[0].file_id + ' [photo]'
+    if message.video:
+        return message.video.file_id + ' [video]'
+    if message.sticker:
+        return message.sticker.file_id + ' [sticker]'
+    if message.document:
+        return message.document.file_id + ' [document]' 
+    return None
+    
 async def get_name(message: types.Message):
     name = message.from_user.username
     if name is None:
